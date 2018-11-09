@@ -1,0 +1,146 @@
+<?php
+
+/**
+field type (type of data) and
+field schema (where to store it)
+
+with any instance of the rgb field attached to it
+
+missing field type.
+
+
+
+Add custom field type and custom a widget to Drupal 7 content type.
+
+Folder structure
+  module_name
+    module_name.info (basic information)
+    module_name.install (database information)
+    module_name.module (most hooks and logic)
+Field Type
+  Definition and screen shot
+Widget
+  Definition and screen shot
+hook
+  Definition
+
+What you need to do: Tell Drupal 7 about...
+the module you are creating using .info file
+
+the custom field type using hook_field_info() in the .module file
+the custom widget using hook_field_widget_info() in the .module file
+
+the format of the display using hook_field_formatter_info() in the .module file
+the widget form using hook_field_widget_form() in the .module file
+the data you want to save and where using .install file and hook_field_schema()
+what to do when there is no data with hook_field_is_empty() in the .module file
+how to validate the data using hook_field_validate() in the .module file
+
+Tell Drupal 7 about the module you are creating using .info file
+name = Constitution Section
+description = This module creates a custom field type and widget.
+core = 7.x
+
+Tell Drupal 7 about the custom field type using hook_field_info() in the .module file
+To tell Drupal 7 abouth the custom field type that we want to use we need to use the hook_field_info() function. This is our first instance of a hook. A hook is how your module communicates with drupal. Drupal knows which module to communicate with by the hook's name. Anywhere where you see something like hook_field_info() you change the 'hook' to your 'module_name' like module_name_field_info(). This naming convention is key to using hooks and custom modules.
+
+*/
+
+
+
+/**
+ * Implements hook_field_info().
+ */
+function my_module_field_info() {
+  return array(
+    'my_module_section' => array(
+      'label' => t('Constitution Sections'),
+      'description' => t('Constitution Section Fields'),
+      'default_widget' => 'my_module_title_body',
+      'default_formatter' => 'my_module_formatter',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function my_module_field_widget_info() { 
+  return array(
+    'my_module_title_body' => array(
+      'label' => t('Constitution Section Fields'),
+      'field types' => array('my_module_section'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function my_module_field_formatter_info() {
+  return array(
+    'my_module_formatter' => array(
+      'label' => t('Constitution Section Formatter'), 
+      'field types' => array('my_module_section'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_widget_form().
+ * Sets the look and the settings of the form.
+ * Field types: https://api.drupal.org/api/drupal/developer%21topics%21forms_api_reference.html/7.x
+*/
+function my_module_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+
+  if ($field['cardinality'] == 1) {
+    $element['#type'] = 'fieldset';
+  }
+
+  $element['section_title'] = array(
+    '#type' => 'textfield', 
+    '#field_prefix' => t('Section Title: <br>'),
+    '#size' => 50,
+    '#default_value' => isset($items[$delta]['section_title']) ? $items[$delta]['section_title'] : '',
+  );
+  
+  $element['section_body'] = array(
+    '#type' => 'text_format', 
+    '#field_prefix' => t('Section Body: '),
+    '#size' => 'normal',
+    '#default_value' => isset($items[$delta]['section_body']) ? $items[$delta]['section_body'] : '',
+    '#format' => isset($items[$delta]['section_body_format']) ? $items[$delta]['section_body_format'] : 'policy_wysiwyg',
+  );
+  $element['section_body_format'] = array(
+    '#type' => 'hidden',
+    '#value' => isset($items[$delta]['section_body_format']) ? $items[$delta]['section_body_format'] : 'policy_wysiwyg',
+  );
+  return $element;
+}
+
+/**
+ * Implementation of hook_field_is_empty().
+ * Check to see if the fields are empty.
+ */
+function my_module_field_is_empty($item, $field) {
+  if (empty($item['section_title']) || empty($item['section_body'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_field_presave().
+ * Split the text_format array from the section_body element and save the two values in different columns in the database.
+ */
+function my_module_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  if ($field['type'] == 'my_module_section') {
+    foreach ($items as $delta => $item) {
+      $items[$delta]['section_body_format'] = $item['section_body']['format'];
+      $section_body = $item['section_body']['value'];
+      $items[$delta]['section_body'] = $section_body;
+    }
+  }
+}

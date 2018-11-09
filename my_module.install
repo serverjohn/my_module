@@ -1,0 +1,33 @@
+<?php
+/** Data types https://www.drupal.org/docs/7/api/schema-api/data-types/text */
+/**
+ * Implements hook_field_schema().
+ */
+function my_module_field_schema($field) {
+  $columns = array(
+    'section_title' => array(
+      'type' => 'varchar',
+      'length' => 50,
+      'not null' => FALSE,
+    ),
+    'section_body' => array( 
+      'type' => 'text',
+      'size' => 'normal',
+      'not null' => FALSE,
+    ),
+    'section_body_format' => array( 
+      'type' => 'varchar',
+      'length' => 50,
+      'not null' => FALSE,
+    ),
+  );
+
+  $indexes = array(
+    'section_title' => array('section_title'),
+  );
+
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}

@@ -1,0 +1,5 @@
+name = Constitution Sections
+description = This module creates a custom field type and widget.
+package = Policy's Custom Modules
+core = 7.x
+version = 7.x-1.0
